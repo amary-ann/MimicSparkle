@@ -23,7 +23,9 @@ async def send_message():
   return {"status": "Message sent"}
 
 @app.post("/whatsapp/callback")
-async def whatsapp_callback(payload: WhatsAppWebhook):
+async def whatsapp_callback(payload):
+    print("Received payload:", payload)
+    
     # payload is now a fully validated Pydantic model
     if payload.object != "whatsapp_business_account":
         return {"error": "Invalid object"}
