@@ -1,5 +1,5 @@
 from typing import Optional
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 import uvicorn
 import aiohttp
 import json
@@ -23,14 +23,14 @@ async def send_message():
   return {"status": "Message sent"}
 
 @app.post("/whatsapp/callback")
-async def whatsapp_callback(payload):
-    print("Received payload:", payload)
-    
+async def whatsapp_callback(request:Request):
+    print("Received payload:", request)
+
     # payload is now a fully validated Pydantic model
-    if payload.object != "whatsapp_business_account":
+    if request.object != "whatsapp_business_account":
         return {"error": "Invalid object"}
 
-    for entry in payload.entry or []:
+    for entry in request.entry or []:
         for change in entry.changes or []:
             if change.field == "messages":
                 for msg in change.value.messages or []:
