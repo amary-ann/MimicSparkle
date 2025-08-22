@@ -51,5 +51,14 @@ async def whatsapp_callback(request: Request):
                             msg.get("type")
                         )
                         await send_message(data)
+                    else:
+                        print(f"Received a non-text message: {msg.get('type')}")
+
+                        data = get_message_input(
+                            msg.get("from"),
+                            f"Received a non-text message! {msg.get('type')}",
+                            msg.get('type')
+                        )
+                        await send_message(data)
 
     return {"success": True, "status": "Message received"}
