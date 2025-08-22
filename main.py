@@ -30,22 +30,27 @@ async def send_message(request: MsgRequest):
 
 
 @app.post("/whatsapp/callback")
-async def whatsapp_callback(payload:dict):
+async def whatsapp_callback(request: Request):
+    payload = await request.json()  # parse JSON body into dict
     pprint(f"{payload=}")
 
-    # payload is now a fully validated Pydantic model
-    if payload['object'] != "whatsapp_business_account":
+    if payload.get("object") != "whatsapp_business_account":
         return {"error": "Invalid object"}
 
-    for entry in payload['entry'] or []:
-        for change in entry['changes'] or []:
-            if change['field'] == "messages":
-                for msg in change['value']['messages'][0] or []:
-                    if msg['type'] == "text":
-                      print(f"{msg['from']} sent you a message!\n The content of the message reads:\
-                             {msg['text']['body'] if msg['text'] else None}")
-                      data = get_message_input(msg['from'], msg['text']['body'], msg['type'])
-                      await send_message(data)
-    return {"success": True,
-            "status": "Message received"}
+    for entry in payload.get("entry", []):
+        for change in entry.get("changes", []):
+            if change.get("field") == "messages":
+                for msg in change.get("value", {}).get("messages", []):
+                    if msg.get("type") == "text":
+                        print(
+                            f"{msg.get('from')} sent you a message!\n"
+                            f"The content of the message reads: {msg.get('text', {}).get('body')}"
+                        )
+                        data = get_message_input(
+                            msg.get("from"),
+                            msg.get("text", {}).get("body"),
+                            msg.get("type")
+                        )
+                        await send_message(data)
 
+    return {"success": True, "status": "Message received"}
