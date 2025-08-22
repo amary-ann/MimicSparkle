@@ -45,3 +45,6 @@ class WhatsAppWebhook(BaseModel):
     object: Optional[str] = None
     entry: Optional[List[Entry]] = None
 
+class MsgRequest(BaseModel):
+    to: str
+    message: str
