@@ -46,5 +46,5 @@ class WhatsAppWebhook(BaseModel):
     entry: Optional[List[Entry]] = None
 
 class MsgRequest(BaseModel):
-    to: str
+    phone_number: str
     message: str

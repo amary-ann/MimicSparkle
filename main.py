@@ -19,11 +19,10 @@ async def root():
     return {"message": "Mimic for Sparkle Meta WhatsApp API"}
 
 @app.post('/send_message')
-async def send_message(request: MsgRequest):
-
-  phone_number = get_whatsapp_no_format(request.to)
+async def send_message(msgreq: MsgRequest):
+  phone_number = get_whatsapp_no_format(msgreq.phone_number)
   data = get_message_input(phone_number
-                                ,request.message)
+                                ,msgreq.message)
   logging.info(f"Content: {pprint(data)}")
   await send_message(data)
   return {"status": "Message sent"}
