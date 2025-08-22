@@ -35,13 +35,18 @@ def get_message_input(recipient, data='Hello!', type="text"):
         OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
         llm_model_name = 'gpt-4o'
         llm = ChatOpenAI(model = llm_model_name, temperature=0.2)
-        chat_template = ChatPromptTemplate([
-            SystemMessage(content=GENERAL_PROMPT),
-            HumanMessage(content='{user_message}'),
+        chat_template = ChatPromptTemplate.from_messages([
+            ("system","{system_prompt}"),
+            ("human","{user_message}"),
         ])
         
-        bot_response = chat_template.invoke({"user_message":data})
-        print(f"Bot response: {bot_response.content}")
+        prompt_value = chat_template.invoke({
+           "system_prompt":GENERAL_PROMPT,
+           "user_message":data})
+        
+        bot_response = llm.invoke(prompt_value).content
+        
+        print(f"Bot response: {bot_response}")
 
         return json.dumps({
         "messaging_product": "whatsapp",
@@ -50,7 +55,7 @@ def get_message_input(recipient, data='Hello!', type="text"):
         "to": recipient,
         "type": type,
         "text": {
-            "body": bot_response.content
+            "body": bot_response
         }
   })
     else:
