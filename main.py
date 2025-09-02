@@ -9,6 +9,10 @@ from pprint import pprint
 from typing import Optional
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
+from motor.motor_asyncio import AsyncIOMotorClient
+from beanie import init_beanie
 from langchain_core.prompts import ChatPromptTemplate, PromptTemplate
 from utils import get_whatsapp_no_format, get_message_input, send_message
 from models import WhatsAppWebhook, MsgRequest, AppResponse,  Session, Message, User, Beneficiary,PinRequest, Pin, RegPinRequest, NotifyRequest, Balance
@@ -17,7 +21,29 @@ load_dotenv()
 
 logging.basicConfig(level=logging.INFO,  format='%(asctime)s - %(levelname)s - %(message)s',  handlers=[logging.FileHandler('app.log', mode='w'), logging.StreamHandler()])
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    print("execution before startup")
+    collection_name =  os.getenv("MONGO_DB_COLLECTION")
+    mongo_string = os.getenv("MONGO_CONNECTION_STRING")
+    client = AsyncIOMotorClient(mongo_string)
+
+    await init_beanie(
+        database=client[collection_name],
+        document_models=[Session, User, Beneficiary, Pin, Balance]
+    )
+    yield print("Execute before closed")
+
+app = FastAPI(lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 @app.get("/")
 async def root():
