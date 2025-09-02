@@ -2,3 +2,4 @@ fastapi[all]
 python-dotenv
 aiohttp
 langchain[openai]
+beanie
