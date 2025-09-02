@@ -110,8 +110,8 @@ class NotifyRequest(BaseModel):
     originatorBank: str
     originatorNarration: Optional[str] = None
     isVirtualPayment: bool=False
-    
-@dataclass
+
+
 class AppResponse:
     success: bool
     message: str
