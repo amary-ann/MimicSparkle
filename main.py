@@ -60,10 +60,14 @@ async def send_message_endpoint(msgreq: MsgRequest):
 
 # Send response to WhatsApp User
 async def _post(data: dict):
+        headers = {
+    "Content-type": "application/json",
+    "Authorization": f"Bearer {os.getenv('WHATSAPP_ACCESS_TOKEN')}",
+    }
         async with aiohttp.ClientSession() as session:
             url = f"{os.getenv('BASE_URL')}/{os.getenv('API_VERSION')}/{os.getenv('PHONE_NUMBER_ID')}/messages"
             try:
-                async with session.post(url, json=data) as resp:
+                async with session.post(url, json=data,headers=headers) as resp:
                     if resp.status != 200:
                         return {"success":False, "message":"Error occurred"}
                     return {"success":True, "message":"Successful operation"}
