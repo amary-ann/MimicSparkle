@@ -15,7 +15,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from beanie import init_beanie
 from langchain_core.prompts import ChatPromptTemplate, PromptTemplate
 from utils import get_whatsapp_no_format, get_message_input, send_message
-from models import WhatsAppWebhook, MsgRequest, AppResponse,  Session, Message, User, Beneficiary,PinRequest, Pin, RegPinRequest, NotifyRequest, Balance
+from models import MsgRequest, AppResponse,  Session, Message, User, Beneficiary,PinRequest, Pin, RegPinRequest, NotifyRequest, Balance
 
 load_dotenv()
 
