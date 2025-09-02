@@ -59,20 +59,20 @@ async def send_message_endpoint(msgreq: MsgRequest):
   return {"status": "Message sent"}
 
 # Send response to WhatsApp User
-async def _post(data: dict) -> AppResponse:
+async def _post(data: dict):
         async with aiohttp.ClientSession() as session:
             url = f"{os.getenv('BASE_URL')}/{os.getenv('API_VERSION')}/{os.getenv('PHONE_NUMBER_ID')}/messages"
             try:
                 async with session.post(url, json=data) as resp:
                     if resp.status != 200:
-                        return AppResponse(False, "Error occurred")
-                    return AppResponse(True, "Successful operation")
+                        return {"success":False, "message":"Error occurred"}
+                    return {"success":True, "message":"Successful operation"}
             except Exception as e:
                 logging.error(f"Error sending message: {e}")
-                return AppResponse(False, str(e))
+                return {"success":False, "message": str(e)}
 
 # Text message handler
-async def send_text_message(to: str, text: str, preview_url: bool = False) -> AppResponse:
+async def send_text_message(to: str, text: str, preview_url: bool = False):
         
         # Check if user exists in the database
         user = await User.find_one({'phone_number' : to})
