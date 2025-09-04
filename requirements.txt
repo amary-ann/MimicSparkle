@@ -15,3 +15,4 @@ requests
 pytesseract
 pillow
 motor
+starlette

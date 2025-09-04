@@ -92,3 +92,189 @@ async def send_message(data):
     except aiohttp.ClientConnectorError as e:
       print('Connection Error', str(e))
 
+import io
+import re
+import base64
+import json
+from PIL import Image, ImageDraw, ImageFont
+from motor.motor_asyncio import AsyncIOMotorClient
+import os
+import requests
+from datetime import datetime
+import base64
+import uuid
+from PIL import Image
+from io import BytesIO
+import requests
+import pytesseract
+
+def ImageCipher(ImagePath, Type = 'encryption'):
+    image = Image.open(ImagePath)
+    buffer = io.BytesIO()
+    image.save(buffer, format="JPEG")
+    image_bytes = buffer.getvalue()
+    if(Type == 'encryption'): 
+        encoded_image = base64.b64encode(image_bytes).decode("utf-8")
+        return encoded_image
+    elif (Type == 'decryption'): 
+        decoded_image = base64.b64decode(image_bytes).decode("utf-8")
+        return decoded_image
+    else : 
+        raise ValueError("Invalid type of image operation, use encryption or decryption")
+    
+def is_image_url(text):
+    return re.match(r'^https:\/\/api\.twilio\.com\/.*\/Media\/.*$', text)
+
+def extract_text_from_twilio_image(url, sid, token):
+    response = requests.get(url, auth=(sid, token))
+    image = Image.open(BytesIO(response.content))
+    text = pytesseract.image_to_string(image)
+    return text
+
+def clean_ocr_output(text: str) -> str:
+    # Normalize escape characters
+    text = text.replace('\\n', '\n').replace('\\t', '\t')  # if double-escaped
+    text = re.sub(r'[\n\r\t]+', ' ', text)
+
+    # Remove weird symbols but keep letters, numbers, periods, commas
+    text = re.sub(r'[^a-zA-Z0-9.,\s-]', '', text)
+
+    # Collapse multiple spaces
+    text = re.sub(r'\s{2,}', ' ', text).strip()
+
+    # Split into words
+    words = text.split()
+
+    cleaned_words = []
+    for word in words:
+        # Keep full account numbers (like 10+ digits)
+        if re.fullmatch(r'\d{6,}', word):
+            cleaned_words.append(word)
+        # Keep normal words or capitalized names
+        elif re.fullmatch(r'[A-Za-z]{3,}', word):
+            cleaned_words.append(word)
+        # Keep things like "Access" or "bank"
+        elif word.lower() in {'access', 'bank', 'gtbank', 'zenith', 'first', 'uba'}:
+            cleaned_words.append(word)
+        # Optionally allow numbers with dots (e.g. 1.25), but not letters mixed with digits
+        elif re.fullmatch(r'\d+\.\d+', word):
+            cleaned_words.append(word)
+        # Everything else is considered junk and skipped
+
+    return ' '.join(cleaned_words)
+    
+
+def most_recent_beneficiaries(phone_number, last_n_beneficiaries:int = 5):
+    """Retrieve the last n number of beneficiaries from database storage"""
+    mongo_string = "mongodb+srv://gerleojerry:5InOFZFPn8zoTSBV@mimic.0zr7s.mongodb.net/?retryWrites=true&w=majority&appName=Mimic"
+
+    mongo_client = AsyncIOMotorClient(mongo_string)
+    db = mongo_client["sparkle"]
+    collection = db['sessions']
+
+    pipeline =[
+        {"$match": {"phone_number": phone_number}},
+        {
+            "$project": {
+                "last_five_beneficiaries": {
+                    "$slice": [
+                        {"$reverseArray": {
+                                "$sortArray": {
+                                    "input": "$beneficiary",
+                                    "sortBy": {"created_at": -1}
+                                }
+                            }
+                        },
+                        last_n_beneficiaries
+                    ]
+                }
+            }
+        }
+    ]
+
+    cursor = collection.aggregate(pipeline)
+    result = cursor.to_list(length=1)
+
+    if result:
+        return result
+    return []
+        
+
+
+def get_institution_code(bank_name):
+    with open("banks.json", "r", encoding="utf-8") as f:
+        loaded_banks = json.load(f)
+
+    for bank in loaded_banks["bank"]:
+        if bank["name"].lower() == bank_name.lower():
+            return bank["code"]
+    return None
+
+
+def generate_invoice(transfer_details):
+    
+    amount = transfer_details.get('amount')
+    receiverName = transfer_details.get('receiverName', 'Unknown')
+    receiverBank = transfer_details.get('receiverBank')
+    receiverAccountNumber = transfer_details.get('receiverAccountNumber')
+
+    # Create blank image
+    img = Image.new('RGB', (600, 300), color='white')
+    draw = ImageDraw.Draw(img)
+    
+    # Fonts
+    try:
+        font_bold = ImageFont.truetype("arialbd.ttf", 28)
+        font_regular = ImageFont.truetype("arial.ttf", 20)
+    except:
+        font_bold = font_regular = None  # fallback if fonts not available
+
+    # Draw content
+    draw.text((50, 30), "Transfer Successful!", fill="green", font=font_bold)
+    draw.text((50, 90), "Amount:", font=font_bold, fill="black")
+    draw.text((200, 90), f"{amount}", font=font_regular, fill="black")
+
+    draw.text((50, 130), "To:", font=font_bold, fill="black")
+    draw.text((200, 130), f"{receiverName}", font=font_regular, fill="black")
+
+    draw.text((50, 170), "Account:", font=font_bold, fill="black")
+    draw.text((200, 170), f"******{receiverAccountNumber[-4:]}", font=font_regular, fill="black")
+
+    draw.text((50, 210), "Bank:", font=font_bold, fill="black")
+    draw.text((200, 210), f"{receiverBank}", font=font_regular, fill="black")
+
+    draw.text((50, 250), "Date:", font=font_bold, fill="black")
+    draw.text((200, 250), datetime.now().strftime("%Y-%m-%d %H:%M"), font=font_regular, fill="black")
+
+    # Reference
+    ref = str(uuid.uuid4())[:8]
+    # Optional footer
+    draw.text((50, 280), f"Ref: {ref}", font=font_regular, fill="gray")
+
+    # Save image with unique filename
+    filename = f"invoice_{ref}.png"
+    path = os.path.join("invoices", filename)
+    
+    os.makedirs("invoices", exist_ok=True)  # Ensure directory exists
+    img.save(path)
+
+    with open(path, 'rb') as image_file:
+        encoded_image = base64.b64encode(image_file.read()).decode('utf-8')
+        response = requests.post(
+            "https://api.imgbb.com/1/upload",
+            data={
+            "key": "421b23434663c0f95a5690f45231107f",
+            "image": encoded_image
+        }
+        )
+    
+    # Check and print the image link
+    if response.status_code == 200:
+        image_url = response.json()['data']['url']
+        print('Uploaded to ImgBB:', image_url)
+        return image_url
+    else:
+        print('Upload failed:', response.json())
+        return None
+
+
