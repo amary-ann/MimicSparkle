@@ -12,8 +12,6 @@ from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 from langchain_core.output_parsers import JsonOutputParser, StrOutputParser
 from pydantic import BaseModel, Field
 from models import Session
-from sparkle_integration import Sparkle
-from sparkle_helper import SparkleHelper
 
 load_dotenv()
 
