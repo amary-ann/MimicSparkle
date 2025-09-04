@@ -18,7 +18,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from beanie import init_beanie
 from langchain_core.prompts import ChatPromptTemplate, PromptTemplate
 from vfd_helper import VFDHelper
-from utils import get_whatsapp_no_format, get_message_input, send_message, most_recent_beneficiaries, generate_invoice, is_image_url, extract_text_from_twilio_image, clean_ocr_output
+from utils import get_whatsapp_no_format, send_message, most_recent_beneficiaries, generate_invoice, is_image_url, extract_text_from_twilio_image, clean_ocr_output
 from models import MsgRequest, AppResponse,  Session, Message, User, Beneficiary,PinRequest, Pin, RegPinRequest, NotifyRequest, Balance
 
 load_dotenv()
@@ -450,7 +450,7 @@ async def whatsapp_callback(request: Request):
                     elif msg.get("type") == "audio":
                         media_content_type = msg.audio.get("mime_type", "")
                         # media_url = get_media_url( msg.get("audio",{}).get("id", None))
-                        
+
                         msg_content = "Audio Message content: {msg}"
                         print(msg_content)
                         await send_text_message(
