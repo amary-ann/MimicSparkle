@@ -1,9 +1,18 @@
 
 import os
+import io
+import re
+import base64
 import json
+import requests
+from datetime import datetime
+import uuid
 import aiohttp
-from prompts import GENERAL_PROMPT
-from langchain_openai import ChatOpenAI
+from io import BytesIO
+import pytesseract
+
+from PIL import Image, ImageDraw, ImageFont
+from motor.motor_asyncio import AsyncIOMotorClient
 from langchain_core.prompts import ChatPromptTemplate, PromptTemplate
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 
@@ -28,48 +37,6 @@ def get_whatsapp_no_format(phone_number: str) -> str:
     print("Formatted phone number:", phone)
     return phone
 
-# Function to create a JSON message input for WhatsApp
-def get_message_input(recipient, data='Hello!', type="text"):
-    
-    if type == "text":
-        OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-        llm_model_name = 'gpt-4o'
-        llm = ChatOpenAI(model = llm_model_name, temperature=0.2)
-        chat_template = ChatPromptTemplate.from_messages([
-            ("system","{system_prompt}"),
-            ("human","{user_message}"),
-        ])
-        
-        prompt_value = chat_template.invoke({
-           "system_prompt":GENERAL_PROMPT,
-           "user_message":data})
-        
-        bot_response = llm.invoke(prompt_value).content
-        
-        print(f"Bot response: {bot_response}")
-
-        return json.dumps({
-        "messaging_product": "whatsapp",
-        "preview_url": False,
-        "recipient_type": "individual",
-        "to": recipient,
-        "type": type,
-        "text": {
-            "body": bot_response
-        }
-  })
-    else:
-        return json.dumps({
-        "messaging_product": "whatsapp",
-        "preview_url": False,
-        "recipient_type": "individual",
-        "to": recipient,
-        "type": 'text',
-        "text": {
-            "body": data
-        }
-        })
-
 # Function to send a message via WhatsApp API
 async def send_message(data):
   headers = {
@@ -92,21 +59,6 @@ async def send_message(data):
     except aiohttp.ClientConnectorError as e:
       print('Connection Error', str(e))
 
-import io
-import re
-import base64
-import json
-from PIL import Image, ImageDraw, ImageFont
-from motor.motor_asyncio import AsyncIOMotorClient
-import os
-import requests
-from datetime import datetime
-import base64
-import uuid
-from PIL import Image
-from io import BytesIO
-import requests
-import pytesseract
 
 def ImageCipher(ImagePath, Type = 'encryption'):
     image = Image.open(ImagePath)
