@@ -185,7 +185,6 @@ async def get_media_url_async(image_id:str):
                         print("Extracted and cleaned text:", cleaned_text)
                     else:
                         raise Exception("Error downloading media:", download_response.text)
-                
                 else:
                     print(f"Failed to get media URL, status code: {resp.status}")
                     return None
