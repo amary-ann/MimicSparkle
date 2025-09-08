@@ -10,8 +10,7 @@ import uuid
 import aiohttp
 from io import BytesIO
 from PIL import Image
-import pytesseract
-
+import easyocr
 from PIL import Image, ImageDraw, ImageFont
 from motor.motor_asyncio import AsyncIOMotorClient
 from langchain_core.prompts import ChatPromptTemplate, PromptTemplate
@@ -180,8 +179,13 @@ async def get_media_url_async(image_id:str):
                     if download_response.status_code == 200:
                         image = Image.open(BytesIO(download_response.content))
                         # Step 4: Run OCR on the image
-                        extracted_text = pytesseract.image_to_string(image)
-                        cleaned_text = clean_ocr_output(extracted_text)
+                        reader = easyocr.Reader(['en'])
+                        results = reader.readtext(BytesIO(image.content).getvalue())
+                        # Step 4: Extract just the text
+                        only_text = [text for (_, text, _) in results]
+                        # Step 5: Join into one string (like pytesseract does)
+                        final_text = "\n".join(only_text)
+                        cleaned_text = clean_ocr_output(final_text)
                         print("Extracted and cleaned text:", cleaned_text)
                     else:
                         raise Exception("Error downloading media:", download_response.text)

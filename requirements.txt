@@ -16,3 +16,7 @@ pytesseract
 pillow
 motor
 starlette
+torch 
+torchvision
+torchaudio
+easyocr
