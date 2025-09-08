@@ -441,7 +441,7 @@ async def whatsapp_callback(request: Request):
                         # message_body = msg.get("image",{}).get("caption","")
 
                         # msg_content = f"Image Message content: {msg}"
-                        print(msg_content)
+                        print(f"{message_body=}")
                         await send_text_message(
                             msg.get("from"),
                             message_body
