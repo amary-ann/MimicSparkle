@@ -436,7 +436,7 @@ async def whatsapp_callback(request: Request):
                         )
                     elif msg.get("type") == "image":
                         media_content_type = msg.get("image",{}).get("mime_type", "")
-                        message_body = get_media_url_async( msg.get("image",{}).get("id", None))
+                        message_body = await get_media_url_async( msg.get("image",{}).get("id", None))
 
                         # message_body = msg.get("image",{}).get("caption","")
 
@@ -450,7 +450,7 @@ async def whatsapp_callback(request: Request):
 
                     elif msg.get("type") == "audio":
                         media_content_type = msg.get("audio",{}).get("mime_type", "")
-                        # media_url = get_media_url_async( msg.get("audio",{}).get("id", None))
+                        # media_url = await get_media_url_async( msg.get("audio",{}).get("id", None))
 
                         msg_content = f"Audio Message content: {msg}"
                         print(msg_content)
