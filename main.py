@@ -18,7 +18,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from beanie import init_beanie
 from langchain_core.prompts import ChatPromptTemplate, PromptTemplate
 from vfd_helper import VFDHelper
-from utils import get_whatsapp_no_format, send_message, most_recent_beneficiaries, generate_invoice, is_image_url, extract_text_from_twilio_image, clean_ocr_output
+from utils import get_whatsapp_no_format, send_message, most_recent_beneficiaries, generate_invoice, is_image_url, extract_text_from_twilio_image, get_media_url_async
 from models import MsgRequest, AppResponse,  Session, Message, User, Beneficiary,PinRequest, Pin, RegPinRequest, NotifyRequest, Balance
 
 load_dotenv()
@@ -221,7 +221,7 @@ async def create_user(request: User) :
 @app.post('/send_message')
 async def send_message_endpoint(msgreq: MsgRequest):
   phone_number = get_whatsapp_no_format(msgreq.phone_number)
-  data = get_message_input(phone_number
+  data = send_message(phone_number
                                 ,msgreq.message)
   logging.info(f"Content: {pprint(data)}")
   await send_message(data)
@@ -436,20 +436,21 @@ async def whatsapp_callback(request: Request):
                         )
                     elif msg.get("type") == "image":
                         media_content_type = msg.get("image",{}).get("mime_type", "")
-                        # media_url = get_media_url( msg.get("image",{}).get("id", None))
+                        message_body = get_media_url_async( msg.get("image",{}).get("id", None))
+
                         # message_body = msg.get("image",{}).get("caption","")
 
-                        msg_content = f"Image Message content: {msg}"
+                        # msg_content = f"Image Message content: {msg}"
                         print(msg_content)
                         await send_text_message(
                             msg.get("from"),
-                            msg_content
+                            message_body
                         )
 
 
                     elif msg.get("type") == "audio":
                         media_content_type = msg.get("audio",{}).get("mime_type", "")
-                        # media_url = get_media_url( msg.get("audio",{}).get("id", None))
+                        # media_url = get_media_url_async( msg.get("audio",{}).get("id", None))
 
                         msg_content = f"Audio Message content: {msg}"
                         print(msg_content)

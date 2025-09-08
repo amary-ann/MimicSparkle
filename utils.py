@@ -9,6 +9,7 @@ from datetime import datetime
 import uuid
 import aiohttp
 from io import BytesIO
+from PIL import Image
 import pytesseract
 
 from PIL import Image, ImageDraw, ImageFont
@@ -161,6 +162,36 @@ def get_institution_code(bank_name):
         if bank["name"].lower() == bank_name.lower():
             return bank["code"]
     return None
+
+async def get_media_url_async(image_id:str):
+    media_info_url = f"{os.getenv('BASE_URL')}/{os.getenv('API_VERSION')}/{image_id}"
+    headers = {
+        "Authorization": f"Bearer {os.getenv('WHATSAPP_ACCESS_TOKEN')}"
+    }
+    async with aiohttp.ClientSession() as session:
+        try:
+            async with session.get(media_info_url, headers=headers) as resp:
+                if resp.status == 200:
+                    media_info = await resp.json()
+                    download_url = media_info.get("url")
+                    print("Media download URL:", download_url)
+                    # Step 3: Download the media content
+                    download_response = requests.get(download_url, headers=headers, stream=True)
+                    if download_response.status_code == 200:
+                        image = Image.open(BytesIO(download_response.content))
+                        # Step 4: Run OCR on the image
+                        extracted_text = pytesseract.image_to_string(image)
+                        cleaned_text = clean_ocr_output(extracted_text)
+                        print("Extracted and cleaned text:", cleaned_text)
+                    else:
+                        raise Exception("Error downloading media:", download_response.text)
+                
+                else:
+                    print(f"Failed to get media URL, status code: {resp.status}")
+                    return None
+        except Exception as e:
+            print('Connection Error', str(e))
+            return None
 
 
 def generate_invoice(transfer_details):
