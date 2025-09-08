@@ -423,8 +423,6 @@ async def whatsapp_callback(request: Request):
         for change in entry.get("changes", []):
             if change.get("field") == "messages":
                 for msg in change.get("value", {}).get("messages", []):
-                    # check if user exists in the database
-                    
                     if msg.get("type") == "text":
                         print(
                             f"{msg.get('from')} sent you a message!\n"
