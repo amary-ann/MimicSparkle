@@ -12,7 +12,6 @@ langchain-cli
 beanie
 python-multipart
 requests
-pytesseract
 pillow
 motor
 starlette
@@ -20,3 +19,4 @@ torch
 torchvision
 torchaudio
 easyocr
+openai

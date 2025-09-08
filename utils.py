@@ -4,6 +4,7 @@ import io
 import re
 import base64
 import json
+from openai import OpenAI
 import requests
 from datetime import datetime
 import uuid
@@ -162,40 +163,59 @@ def get_institution_code(bank_name):
             return bank["code"]
     return None
 
-async def get_media_url_async(image_id:str):
-    media_info_url = f"{os.getenv('BASE_URL')}/{os.getenv('API_VERSION')}/{image_id}"
+async def get_media_url_async(media_id:str):
+    media_info_url = f"{os.getenv('BASE_URL')}/{os.getenv('API_VERSION')}/{media_id}"
     headers = {
         "Authorization": f"Bearer {os.getenv('WHATSAPP_ACCESS_TOKEN')}"
     }
     async with aiohttp.ClientSession() as session:
         try:
+            # Get the media metadata (to extract download URL)
             async with session.get(media_info_url, headers=headers) as resp:
-                if resp.status == 200:
-                    media_info = await resp.json()
-                    download_url = media_info.get("url")
-                    print("Media download URL:", download_url)
-                    # Step 3: Download the media content
-                    download_response = requests.get(download_url, headers=headers, stream=True)
-                    if download_response.status_code == 200:
-                        image = Image.open(BytesIO(download_response.content))
-                        # Step 4: Run OCR on the image
-                        reader = easyocr.Reader(['en'])
-                        results = reader.readtext(BytesIO(image.content).getvalue())
-                        # Step 4: Extract just the text
-                        only_text = [text for (_, text, _) in results]
-                        # Step 5: Join into one string (like pytesseract does)
-                        final_text = "\n".join(only_text)
-                        cleaned_text = clean_ocr_output(final_text)
-                        print("Extracted and cleaned text:", cleaned_text)
-                    else:
-                        raise Exception("Error downloading media:", download_response.text)
-                else:
-                    print(f"Failed to get media URL, status code: {resp.status}")
+                if resp.status != 200:
+                    print(f"Failed to get media URL: {resp.status}")
                     return None
+        
+                media_info = await resp.json()
+                download_url = media_info.get("url")
+                if not download_url:
+                    print("⚠️ No download URL found in media info")
+                    return None
+                # Download the media content
+                async with session.get(download_url, headers=headers) as download_resp:
+                    if download_resp.status == 200:
+                        return await download_resp.read()
+                    else:
+                        print(f"Error downloading media: {download_resp.status}")
+                        return None
         except Exception as e:
-            print('Connection Error', str(e))
+            print("Connection Error:", str(e))
             return None
+        
+def process_image_bytes(image_bytes: bytes) -> str:
+    image = Image.open(BytesIO(image_bytes))
+    reader = easyocr.Reader(['en'], verbose=False)
+    results = reader.readtext(image_bytes)
 
+    # Extract only text
+    only_text = [text for (_, text, _) in results]
+    final_text = "\n".join(only_text)
+    cleaned_text = clean_ocr_output(final_text)
+    print("Extracted and cleaned text:", cleaned_text)
+    return cleaned_text
+
+def process_audio_bytes(audio_bytes: bytes) -> str:
+    client = OpenAI()
+    # Save to a temporary file (Whisper needs file-like object)
+    with open("temp_audio.ogg", "wb") as f:
+        f.write(audio_bytes)
+    
+    with open("temp_audio.ogg", "rb") as f:
+        transcript = client.audio.transcriptions.create(
+            model="gpt-4o-transcribe",
+            file=f
+        )
+    return transcript.text
 
 def generate_invoice(transfer_details):
     

@@ -18,7 +18,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from beanie import init_beanie
 from langchain_core.prompts import ChatPromptTemplate, PromptTemplate
 from vfd_helper import VFDHelper
-from utils import get_whatsapp_no_format, send_message, most_recent_beneficiaries, generate_invoice, is_image_url, extract_text_from_twilio_image, get_media_url_async
+from utils import get_whatsapp_no_format, send_message, most_recent_beneficiaries, generate_invoice, get_media_url_async, process_image_bytes, process_audio_bytes
 from models import MsgRequest, AppResponse,  Session, Message, User, Beneficiary,PinRequest, Pin, RegPinRequest, NotifyRequest, Balance
 
 load_dotenv()
@@ -434,7 +434,8 @@ async def whatsapp_callback(request: Request):
                         )
                     elif msg.get("type") == "image":
                         media_content_type = msg.get("image",{}).get("mime_type", "")
-                        message_body = await get_media_url_async( msg.get("image",{}).get("id", None))
+                        media_bytes = await get_media_url_async( msg.get("image",{}).get("id", None))
+                        message_body = process_image_bytes(media_bytes)
 
                         # message_body = msg.get("image",{}).get("caption","")
                         # msg_content = f"Image Message content: {msg}"
@@ -447,13 +448,14 @@ async def whatsapp_callback(request: Request):
 
                     elif msg.get("type") == "audio":
                         media_content_type = msg.get("audio",{}).get("mime_type", "")
-                        # media_url = await get_media_url_async( msg.get("audio",{}).get("id", None))
+                        media_bytes = await get_media_url_async( msg.get("audio",{}).get("id", None))
 
-                        msg_content = f"Audio Message content: {msg}"
-                        print(msg_content)
+                        message_body = process_audio_bytes(media_bytes)
+                        # msg_content = f"Audio Message content: {msg}"
+                        print(f"{message_body=}")
                         await send_text_message(
                             msg.get("from"),
-                            msg_content
+                            message_body
                         )
 
                     else:
