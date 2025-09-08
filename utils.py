@@ -170,20 +170,23 @@ async def get_media_url_async(media_id:str):
     }
     async with aiohttp.ClientSession() as session:
         try:
+            print("Fetching media info from:", media_info_url)
             # Get the media metadata (to extract download URL)
             async with session.get(media_info_url, headers=headers) as resp:
                 if resp.status != 200:
                     print(f"Failed to get media URL: {resp.status}")
                     return None
-        
+
                 media_info = await resp.json()
                 download_url = media_info.get("url")
+                print("Fetched media info:", media_info)
                 if not download_url:
                     print("⚠️ No download URL found in media info")
                     return None
                 # Download the media content
                 async with session.get(download_url, headers=headers) as download_resp:
                     if download_resp.status == 200:
+                        print("Successfully downloaded media content")
                         return await download_resp.read()
                     else:
                         print(f"Error downloading media: {download_resp.status}")
@@ -193,10 +196,11 @@ async def get_media_url_async(media_id:str):
             return None
         
 def process_image_bytes(image_bytes: bytes) -> str:
+    print("Processing image bytes for OCR")
     image = Image.open(BytesIO(image_bytes))
     reader = easyocr.Reader(['en'], verbose=False)
     results = reader.readtext(image_bytes)
-
+    print("OCR results:", results)
     # Extract only text
     only_text = [text for (_, text, _) in results]
     final_text = "\n".join(only_text)
