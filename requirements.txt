@@ -16,3 +16,4 @@ pillow
 motor
 starlette
 openai
+aiofiles
