@@ -12,7 +12,6 @@ import aiohttp
 import aiofiles
 from io import BytesIO
 from PIL import Image
-import easyocr
 import mimetypes
 from PIL import Image, ImageDraw, ImageFont
 from motor.motor_asyncio import AsyncIOMotorClient
