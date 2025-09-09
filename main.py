@@ -439,14 +439,14 @@ async def whatsapp_callback(request: Request):
                         # message_body = msg.get("image",{}).get("caption","")
                         # msg_content = f"Image Message content: {msg}"
                         print(f"{text=}")
-                        # await send_text_message(
-                        #     msg.get("from"),
-                        #     text
-                        # )
                         await send_text_message(
                             msg.get("from"),
-                            f"Image Message content: {msg}"
+                            text
                         )
+                        # await send_text_message(
+                        #     msg.get("from"),
+                        #     f"Image Message content: {msg}"
+                        # )
 
 
                     elif msg.get("type") == "audio":
