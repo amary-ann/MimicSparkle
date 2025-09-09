@@ -187,6 +187,7 @@ async def get_media_bytes_async(mime_type, media_id:str):
                 
                 # Step 2: Guess file extension
                 ext = mimetypes.guess_extension(mime_type) or ""
+                print(f"Guessed file extension: {ext} for MIME type: {mime_type}")
                 
                 # Download the media content
                 async with session.get(download_url, headers=headers) as download_resp:
