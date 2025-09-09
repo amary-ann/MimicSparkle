@@ -9,9 +9,11 @@ import requests
 from datetime import datetime
 import uuid
 import aiohttp
+import aiofiles
 from io import BytesIO
 from PIL import Image
 import easyocr
+import mimetypes
 from PIL import Image, ImageDraw, ImageFont
 from motor.motor_asyncio import AsyncIOMotorClient
 from langchain_core.prompts import ChatPromptTemplate, PromptTemplate
@@ -163,7 +165,7 @@ def get_institution_code(bank_name):
             return bank["code"]
     return None
 
-async def get_media_url_async(media_id:str):
+async def get_media_bytes_async(mime_type, media_id:str):
     media_info_url = f"{os.getenv('BASE_URL')}/{os.getenv('API_VERSION')}/{media_id}"
     headers = {
         "Authorization": f"Bearer {os.getenv('WHATSAPP_ACCESS_TOKEN')}"
@@ -183,11 +185,16 @@ async def get_media_url_async(media_id:str):
                 if not download_url:
                     print("⚠️ No download URL found in media info")
                     return None
+                
+                # Step 2: Guess file extension
+                ext = mimetypes.guess_extension(mime_type) or ""
+                
                 # Download the media content
                 async with session.get(download_url, headers=headers) as download_resp:
                     if download_resp.status == 200:
                         print("Successfully downloaded media content")
-                        return await download_resp.read()
+                        media_bytes = await download_resp.read()
+                        return ext, media_bytes
                     else:
                         print(f"Error downloading media: {download_resp.status}")
                         return None
@@ -195,19 +202,73 @@ async def get_media_url_async(media_id:str):
             print("Connection Error:", str(e))
             return None
         
-def process_image_bytes(image_bytes: bytes) -> str:
-    print("Processing image bytes for OCR")
-    image = Image.open(BytesIO(image_bytes))
-    reader = easyocr.Reader(['en'], verbose=False)
-    results = reader.readtext(image_bytes)
-    print("OCR results:", results)
-    # Extract only text
-    only_text = [text for (_, text, _) in results]
-    final_text = "\n".join(only_text)
-    cleaned_text = clean_ocr_output(final_text)
-    print("Extracted and cleaned text:", cleaned_text)
-    return cleaned_text
+async def save_media_to_file(mime_type, media_id: str, filename: str | None = None) -> str | None:
+    result = await get_media_bytes_async(mime_type,media_id)
+    if not result:
+        return None
 
+    ext, media_bytes = result
+    filename = filename or f"{media_id}{ext}"
+
+    async with aiofiles.open(filename, "wb") as f:
+        await f.write(media_bytes)
+
+    print(f"✅ Saved media as {filename}")
+    return filename
+
+
+def ocr_space_file(filename, overlay=False, api_key=os.getenv("OCR_API_KEY"), language='eng'):
+    """ OCR.space API request with local file.
+        Python3.5 - not tested on 2.7
+    :param filename: Your file path & name.
+    :param overlay: Is OCR.space overlay required in your response.
+                    Defaults to False.
+    :param api_key: OCR.space API key.
+                    Defaults to 'helloworld'.
+    :param language: Language code to be used in OCR.
+                    List of available language codes can be found on https://ocr.space/OCRAPI
+                    Defaults to 'en'.
+    :return: Result in JSON format.
+    """
+
+    payload = {'isOverlayRequired': overlay,
+               'apikey': api_key,
+               'language': language,
+               }
+    with open(filename, 'rb') as f:
+        r = requests.post('https://api.ocr.space/parse/image',
+                          files={filename: f},
+                          data=payload,
+                          )
+    return r.content.decode()
+
+
+# def ocr_space_url(url, overlay=False, api_key='helloworld', language='eng'):
+#     """ OCR.space API request with remote file.
+#         Python3.5 - not tested on 2.7
+#     :param url: Image url.
+#     :param overlay: Is OCR.space overlay required in your response.
+#                     Defaults to False.
+#     :param api_key: OCR.space API key.
+#                     Defaults to 'helloworld'.
+#     :param language: Language code to be used in OCR.
+#                     List of available language codes can be found on https://ocr.space/OCRAPI
+#                     Defaults to 'en'.
+#     :return: Result in JSON format.
+#     """
+
+#     payload = {'url': url,
+#                'isOverlayRequired': overlay,
+#                'apikey': api_key,
+#                'language': language,
+#                }
+#     r = requests.post('https://api.ocr.space/parse/image',
+#                       data=payload,
+#                       )
+#     return r.content.decode()
+
+
+# Use examples:
 def process_audio_bytes(audio_bytes: bytes) -> str:
     client = OpenAI()
     # Save to a temporary file (Whisper needs file-like object)

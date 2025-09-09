@@ -15,8 +15,4 @@ requests
 pillow
 motor
 starlette
-torch 
-torchvision
-torchaudio
-easyocr
 openai
