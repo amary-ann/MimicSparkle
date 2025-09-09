@@ -80,11 +80,11 @@ def ImageCipher(ImagePath, Type = 'encryption'):
 def is_image_url(text):
     return re.match(r'^https:\/\/api\.twilio\.com\/.*\/Media\/.*$', text)
 
-def extract_text_from_twilio_image(url, sid, token):
-    response = requests.get(url, auth=(sid, token))
-    image = Image.open(BytesIO(response.content))
-    text = pytesseract.image_to_string(image)
-    return text
+# def extract_text_from_twilio_image(url, sid, token):
+#     response = requests.get(url, auth=(sid, token))
+#     image = Image.open(BytesIO(response.content))
+#     text = pytesseract.image_to_string(image)
+#     return text
 
 def clean_ocr_output(text: str) -> str:
     # Normalize escape characters
