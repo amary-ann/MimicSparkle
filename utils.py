@@ -243,7 +243,10 @@ def ocr_space_file(filename, overlay=False, api_key=os.getenv("OCR_API_KEY"), la
                           data=payload,
                           )
         print(f"Response from OCR {r.content.decode()}")
-    return r.content.decode()
+    result = json.loads(r.content.decode())
+    print(f"Parsed OCR result: {result}")
+
+    return result.get("ParsedResults", [{}])[0].get("ParsedText", "")
 
 
 # def ocr_space_url(url, overlay=False, api_key='helloworld', language='eng'):
