@@ -284,14 +284,14 @@ async def process_message(to: str, text: str):
                 
             elif(request_type.content == "qa"):
                 res  = transfer_qa(session, TRANSFER_QA_PROMPT)
-                result = res['response_message']
+                response = res['response_message']
                 print("Transfer QA response", result)
 
             elif(request_type.content == "account_balance"):
                 user_acct = user.account_number 
                 user_bal = await Balance.find_one({"account_number":user_acct})
                 balance = user_bal.balance
-                result = f"Your account balance is *NGN {balance}* at *{datetime.now(timezone.utc).strftime('%d-%m-%Y %H:%M:%S')}* "
+                response = f"Your account balance is *NGN {balance}* at *{datetime.now(timezone.utc).strftime('%d-%m-%Y %H:%M:%S')}* "
 
             elif(request_type.content == "transfer"):
                     # Check if user already saw the transfer prompt
@@ -317,7 +317,7 @@ async def process_message(to: str, text: str):
                     await session.save()
 
                     # Return early and wait for user reply
-                    message = Message(message=result, is_user=False)
+                    message = Message(message=response, is_user=False)
                     session.chats.append(message)
                     await session.save()
                     whatsapp_msg = await send_text_message(to, response)
