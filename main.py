@@ -285,7 +285,6 @@ async def process_message(to: str, text: str):
             elif(request_type.content == "qa"):
                 res  = transfer_qa(session, TRANSFER_QA_PROMPT)
                 result = res['response_message']
-                media_url = None
                 print("Transfer QA response", result)
 
             elif(request_type.content == "account_balance"):
@@ -293,7 +292,6 @@ async def process_message(to: str, text: str):
                 user_bal = await Balance.find_one({"account_number":user_acct})
                 balance = user_bal.balance
                 result = f"Your account balance is *NGN {balance}* at *{datetime.now(timezone.utc).strftime('%d-%m-%Y %H:%M:%S')}* "
-                media_url = None
 
             elif(request_type.content == "transfer"):
                     # Check if user already saw the transfer prompt
@@ -439,7 +437,11 @@ async def whatsapp_callback(request: Request):
                         # message_body = msg.get("image",{}).get("caption","")
                         # msg_content = f"Image Message content: {msg}"
                         print(f"{text=}")
-                        await send_text_message(
+                        # await send_text_message(
+                        #     msg.get("from"),
+                        #     text
+                        # )
+                        await process_message(
                             msg.get("from"),
                             text
                         )
@@ -456,7 +458,11 @@ async def whatsapp_callback(request: Request):
                         message_body = process_audio_bytes(msg.get("audio",{}).get("id", None),media_bytes)
                         # msg_content = f"Audio Message content: {msg}"
                         print(f"{message_body=}")
-                        await send_text_message(
+                        # await send_text_message(
+                        #     msg.get("from"),
+                        #     message_body
+                        # )
+                        await process_message(
                             msg.get("from"),
                             message_body
                         )
