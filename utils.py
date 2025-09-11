@@ -194,6 +194,7 @@ async def get_media_bytes_async(mime_type, media_id:str):
                     if download_resp.status == 200:
                         print("Successfully downloaded media content")
                         media_bytes = await download_resp.read()
+                        print(f"Downloaded {len(media_bytes)} bytes")
                         return ext, media_bytes
                     else:
                         print(f"Error downloading media: {download_resp.status}")
@@ -202,13 +203,14 @@ async def get_media_bytes_async(mime_type, media_id:str):
             print("Connection Error:", str(e))
             return None
         
-async def save_media_to_file(mime_type, media_id: str, filename: str | None = None) -> str | None:
+async def save_media_to_file(mime_type, media_id: str) -> str | None:
     result = await get_media_bytes_async(mime_type,media_id)
     if not result:
         return None
 
     ext, media_bytes = result
-    filename = filename or f"{media_id}{ext}"
+    filename = f"{media_id}{ext}"
+    print(f"Saving media to file: {filename}")
 
     async with aiofiles.open(filename, "wb") as f:
         await f.write(media_bytes)
@@ -240,6 +242,7 @@ def ocr_space_file(filename, overlay=False, api_key=os.getenv("OCR_API_KEY"), la
                           files={filename: f},
                           data=payload,
                           )
+        print(f"Response from OCR {r.content.decode()}")
     return r.content.decode()
 
 

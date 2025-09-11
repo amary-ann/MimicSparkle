@@ -434,7 +434,7 @@ async def whatsapp_callback(request: Request):
                         )
                     elif msg.get("type") == "image":
                         media_content_type = msg.get("image",{}).get("mime_type", "")
-                        file = await save_media_to_file(media_content_type, msg.get("image",{}).get("id", None), msg.get("image",{}).get("id", None))
+                        file = await save_media_to_file(media_content_type, msg.get("image",{}).get("id", None))
                         text = ocr_space_file(file)
                         # message_body = msg.get("image",{}).get("caption","")
                         # msg_content = f"Image Message content: {msg}"
