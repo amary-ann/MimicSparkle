@@ -451,8 +451,9 @@ async def whatsapp_callback(request: Request):
 
                     elif msg.get("type") == "audio":
                         media_content_type = msg.get("audio",{}).get("mime_type", "")
-                        file = await save_media_to_file(media_content_type, msg.get("audio",{}).get("id", None))
-                        message_body = process_audio_bytes(file)
+                        ext,media_bytes = await get_media_bytes_async(media_content_type, msg.get("audio",{}).get("id", None))
+                        print(f"{len(media_bytes)=}")
+                        message_body = process_audio_bytes(msg.get("audio",{}).get("id", None),media_bytes)
                         # msg_content = f"Audio Message content: {msg}"
                         print(f"{message_body=}")
                         await send_text_message(

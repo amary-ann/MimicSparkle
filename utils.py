@@ -275,13 +275,13 @@ def ocr_space_file(filename, overlay=False, api_key=os.getenv("OCR_API_KEY"), la
 
 
 # Use examples:
-def process_audio_bytes(filename) -> str:
+def process_audio_bytes(media_id, audio_bytes: bytes) -> str:
     client = OpenAI()
     # Save to a temporary file (Whisper needs file-like object)
-    # with open("temp_audio.ogg", "wb") as f:
-    #     f.write(audio_bytes)
+    with open(f"{media_id}.ogg", "wb") as f:
+        f.write(audio_bytes)
     
-    with open(filename, 'rb') as f:
+    with open(f"{media_id}.ogg", "rb") as f:
         transcript = client.audio.transcriptions.create(
             model="gpt-4o-transcribe",
             file=f
